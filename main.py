@@ -418,8 +418,10 @@ def send_answer(message):
         answer = message['text'][1:]
         send_to_block = False
 
+    print(send_to_block)
+
     # Если блокировка, нет бонусов и ответ не с !:
-    if (len(CUR_PARAMS[message['peer_id']]["cur_json"]["Level"]["Bonuses"]) == 0) and not send_to_block:
+    if (len(CUR_PARAMS[message['peer_id']]["cur_json"]["Level"]["Bonuses"]) == 0) and CUR_PARAMS[message['peer_id']]['cur_json']['Level']['HasAnswerBlockRule'] and not send_to_block:
         BOT.send_message(message['peer_id'], 'На уровне блокировка, в сектор вбивайте самостоятельно или через /!')
         return
 
