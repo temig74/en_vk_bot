@@ -77,7 +77,6 @@ https://github.com/temig74
 /open_browser открыть бразуер на компьютере, где запущен бот, привязанный к сессии бота (необходим firefox)
 /game_info - информация об игре
 /set_doc - установить ссылку на гуглдок
-/link - открыть ссылку и скинуть скрин
 /buttons - добавить клавиатуру с кнопками
 ''')
 
@@ -206,14 +205,6 @@ def send_screen(peer_id, link):
 @BOT.message_handler(commands=['screen', 'скрин'])
 def cmd_screen(message):
     send_screen(message['peer_id'], f'https://{CUR_PARAMS[message['peer_id']]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[message['peer_id']]["cur_json"]["GameId"]}?lang={LANG}')
-
-
-# Открыть ссылку и показать скрин
-@BOT.message_handler(commands=['link'])
-def cmd_link(message):
-    if message['attachments']:
-        return
-    send_screen(message['peer_id'], message['text'].split()[1])
 
 
 # Отправить информацию о текущем уровне
