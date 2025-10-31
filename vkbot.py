@@ -9,7 +9,7 @@ import time
 import queue
 import base64
 import io
-
+import requests
 
 class VkBot:
     def __init__(self, token: str, group_id: int):
@@ -148,18 +148,26 @@ class VkBot:
         worker_thread = threading.Thread(target=self._worker, daemon=True)
         worker_thread.start()
 
-        try:
-            for event in self.longpoll.listen():
-                if self._stop_event.is_set():
-                    break
-                if event.type == VkBotEventType.MESSAGE_NEW and event.obj.message.get('text'):
-                    self._process_message(event)
-        except KeyboardInterrupt:
-            logging.info("Бот остановлен вручную.")
-        except Exception as e:
-            logging.critical(f"Критическая ошибка работы бота: {e}", exc_info=True)
-        finally:
-            self._stop_event.set()
-            self._worker_queue.join()
-            worker_thread.join()
-            logging.info("Бот завершил работу.")
+        while not self._stop_event.is_set():
+            try:
+                for event in self.longpoll.listen():
+                    if self._stop_event.is_set():
+                        break
+                    if event.type == VkBotEventType.MESSAGE_NEW and event.obj.message.get('text'):
+                        self._process_message(event)
+            except KeyboardInterrupt:
+                logging.info("Бот остановлен вручную.")
+                break
+            except requests.exceptions.ConnectionError as ce:
+                logging.error(f'Ошибка соединения {ce}')
+                time.sleep(10)
+            except TimeoutError as te:
+                logging.warning(f"Тайм-аут ожидания сервера: {te}. Повторяем попытку...")
+                time.sleep(5)
+            except Exception as e:
+                logging.critical(f"Критическая ошибка работы бота: {e}", exc_info=True)
+
+        self._stop_event.set()
+        self._worker_queue.join()
+        worker_thread.join()
+        logging.info("Бот завершил работу.")
