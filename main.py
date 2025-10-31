@@ -18,20 +18,24 @@ import configparser
 import random
 
 # Читаем конфиг
-config = configparser.ConfigParser()
-config.read('settings.ini', encoding='utf-8')
-ADMIN_USERNAMES = tuple(config['Settings']['Admins'].split(','))  # Администраторы, которым разрешена авторизация бота в чате
-SECTORS_LEFT_ALERT = int(config['Settings']['Sectors_left_alert'])  # Количество оставшихся для закрытия секторов, с которого выводить оповещение, сколько осталось
-USER_AGENT = {'User-agent': 'Temig vk enbot'}  # Выставляемый в requests и selenium user-agent
-TASK_MAX_LEN = int(config['Settings']['Task_max_len'])  # Максимальное кол-во символов в одном сообщении, если превышает, то разбивается на несколько
-LANG = config['Settings']['Lang']
-CHECK_INTERVAL = int(config['Settings']['Check_interval'])
-TIMELEFT_ALERT1 = int(config['Settings']['Timeleft_alert1'])
-TIMELEFT_ALERT2 = int(config['Settings']['Timeleft_alert2'])
-VK_GROUP_ID = int(config['Settings']['Vk_group_id'])
-VK_TOKEN = config['Settings']['Vk_token']
-SEND_SCREEN = True if config['Settings']['Send_screen'].lower() == 'true' else False
-STOP_ACCEPT_CODES_WORDS = tuple(config['Settings']['Stop_accept_codes_words'].split(','))
+try:
+    config = configparser.ConfigParser()
+    config.read('settings.ini', encoding='utf-8')
+    ADMIN_USERNAMES = tuple(config['Settings']['Admins'].split(','))  # Администраторы, которым разрешена авторизация бота в чате
+    SECTORS_LEFT_ALERT = int(config['Settings']['Sectors_left_alert'])  # Количество оставшихся для закрытия секторов, с которого выводить оповещение, сколько осталось
+    USER_AGENT = {'User-agent': 'Temig vk enbot'}  # Выставляемый в requests и selenium user-agent
+    TASK_MAX_LEN = int(config['Settings']['Task_max_len'])  # Максимальное кол-во символов в одном сообщении, если превышает, то разбивается на несколько
+    LANG = config['Settings']['Lang']
+    CHECK_INTERVAL = int(config['Settings']['Check_interval'])
+    TIMELEFT_ALERT1 = int(config['Settings']['Timeleft_alert1'])
+    TIMELEFT_ALERT2 = int(config['Settings']['Timeleft_alert2'])
+    VK_GROUP_ID = int(config['Settings']['Vk_group_id'])
+    VK_TOKEN = config['Settings']['Vk_token']
+    SEND_SCREEN = True if config['Settings']['Send_screen'].lower() == 'true' else False
+    STOP_ACCEPT_CODES_WORDS = tuple(config['Settings']['Stop_accept_codes_words'].split(','))
+
+except:
+    print('Error reading settings.ini config, check')
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -241,7 +245,7 @@ def check_engine(cur_chat_id):
     try:
         game_json = CUR_PARAMS[cur_chat_id]["session"].get(f'https://{CUR_PARAMS[cur_chat_id]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[cur_chat_id]["cur_json"]["GameId"]}?json=1&lang={LANG}').json()
     except requests.exceptions.ConnectionError as CE:
-        print('Ошибка соединения, переподключаюсь')
+        print(f'Ошибка соединения {CE}, переподключаюсь')
         return True
 
     except Exception as e:
