@@ -240,6 +240,10 @@ def send_curlevel_info(cur_chat, cur_json):
 def check_engine(cur_chat_id):
     try:
         game_json = CUR_PARAMS[cur_chat_id]["session"].get(f'https://{CUR_PARAMS[cur_chat_id]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[cur_chat_id]["cur_json"]["GameId"]}?json=1&lang={LANG}').json()
+    except requests.exceptions.ConnectionError as CE:
+        print('Ошибка соединения, переподключаюсь')
+        return True
+
     except Exception as e:
         BOT.send_message(cur_chat_id, f'Ошибка мониторинга, возможно необходимо заново авторизоваться: {e}')
         logging.error(f"Ошибка мониторинга бота: {e}", exc_info=True)
