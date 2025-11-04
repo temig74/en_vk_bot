@@ -80,7 +80,6 @@ class VkBot:
                 new_message = self.parse_html(message)
             else:
                 new_message = message
-            print(new_message)
             self.vk.messages.send(peer_id=peer_id, message=new_message, random_id=get_random_id())
 
         except Exception as e:
