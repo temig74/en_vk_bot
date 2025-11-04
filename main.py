@@ -9,7 +9,7 @@ from selenium import webdriver  # pip install selenium
 from selenium.webdriver.firefox.options import Options
 import re
 import io
-
+import base64
 # from selenium.webdriver.support.ui import WebDriverWait
 # from selenium.webdriver.support import expected_conditions as EC
 
@@ -31,11 +31,10 @@ try:
     TIMELEFT_ALERT2 = int(config['Settings']['Timeleft_alert2'])
     VK_GROUP_ID = int(config['Settings']['Vk_group_id'])
     VK_TOKEN = config['Settings']['Vk_token']
-    SEND_SCREEN = True if config['Settings']['Send_screen'].lower() == 'true' else False
     STOP_ACCEPT_CODES_WORDS = tuple(config['Settings']['Stop_accept_codes_words'].split(','))
 
-except:
-    print('Error reading settings.ini config, check')
+except Exception as se:
+    print(f'Error reading settings.ini config: {se}')
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -70,10 +69,13 @@ https://github.com/temig74
 /hint, /хинт - показать подсказки
 /task, /таск - показать текущее задание
 /screen, /скрин - скриншот текущего уровня (необходим firefox)
+/fscreen, /фскрин - полный скриншот текущего уровня (необходим firefox)
 /любой_код123 - вбитие в движок любой_код123
 /accept_codes [0] - включить/[выключить] прием кодов из чата
 /sector_monitor [0] - включить/[выключить] мониторинг секторов
 /bonus_monitor [0] - включить/[выключить] мониторинг бонусов
+/parser [0] - включить/[выключить] парсер HTML
+/send_screen [0] - включить/[выключить] отправку скрина нового уровня
 /time - оставшееся время до апа
 /load_old_json - загрузить информацию о прошедших уровнях игры из файла (при перезапуске бота)
 /geo или /* координаты через пробел - отправить геометку по координатам
@@ -82,6 +84,8 @@ https://github.com/temig74
 /game_info - информация об игре
 /set_doc - установить ссылку на гуглдок
 /buttons - добавить клавиатуру с кнопками
+/w название_статьи - скрин статьи из вики
+/wf название_статьи - полный скрин статьи из вики
 ''')
 
 
@@ -177,6 +181,8 @@ def cmd_auth(message):
                 'accept_codes': True,
                 'sector_monitor': True,
                 'bonus_monitor': True,
+                'send_screen': True,
+                'parser': True,
                 'route_builder': False,
                 '5_min_sent': False,
                 '1_min_sent': False,
@@ -185,30 +191,36 @@ def cmd_auth(message):
                 'sector_closers': {},
                 'bonus_closers': {},
                 'last_coords': None}
-
             # запускаем firefox браузер, который будем использовать для скриншотов уровня
             options = Options()
             options.add_argument("--headless")  # не отображаемый в системе
             options.set_preference("general.useragent.override", USER_AGENT['User-agent'])
             my_driver = webdriver.Firefox(options=options)
-            my_driver.get(f'https://{my_domain}')
-            my_driver.add_cookie({'name': 'atoken', 'value': my_session.cookies.get_dict()['atoken'], 'domain': '.en.cx', 'secure': False, 'httpOnly': True, 'session': True})
+            # my_driver.get(f'https://{my_domain}')
+            my_driver.get(f'https://{my_domain}/GameEngines/Encounter/Play/{my_game_id}')
+            # my_driver.add_cookie({'name': 'atoken', 'value': my_session.cookies.get_dict()['atoken'], 'domain': '.en.cx', 'secure': False, 'httpOnly': True, 'session': True})
+            my_driver.add_cookie({'name': 'atoken', 'value': my_session.cookies.get_dict()['atoken'], 'domain': '.' + my_domain, 'secure': False, 'httpOnly': True, 'session': True})
             my_driver.add_cookie({'name': 'stoken', 'value': my_session.cookies.get_dict()['stoken'], 'domain': '.' + my_domain, 'secure': False, 'httpOnly': False, 'session': True})
             CUR_PARAMS[cur_chat_id]['driver'] = my_driver
             BOT.send_message(message['peer_id'], 'Виртуальный браузер запущен')
 
 
-def send_screen(peer_id, link):
+def send_screen(peer_id, link, full=False):
     if CUR_PARAMS[peer_id]['driver']:
         CUR_PARAMS[peer_id]['driver'].get(link)
-        BOT.send_photo_from_base64(CUR_PARAMS[peer_id]['driver'].get_full_page_screenshot_as_base64(), peer_id, '')
+        # BOT.send_photo_from_base64(CUR_PARAMS[peer_id]['driver'].get_full_page_screenshot_as_base64(), peer_id, '') #  хуже качество
+        if full:
+            BOT.send_stringio_file(peer_id, io.BytesIO(base64.b64decode(CUR_PARAMS[peer_id]['driver'].get_full_page_screenshot_as_base64())), 'screen_file.png')  # файлом лучше качество, если большой скрин
+        else:
+            BOT.send_stringio_file(peer_id, io.BytesIO(base64.b64decode(CUR_PARAMS[peer_id]['driver'].get_screenshot_as_base64())), 'screen_file.png')  # файлом лучше качество, если большой скрин
     else:
         BOT.send_message(peer_id, 'Виртуальный браузер не запущен')
 
 
-@BOT.message_handler(commands=['screen', 'скрин'])
+@BOT.message_handler(commands=['screen', 'скрин', 'fscreen', 'фскрин'])
 def cmd_screen(message):
-    send_screen(message['peer_id'], f'https://{CUR_PARAMS[message['peer_id']]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[message['peer_id']]["cur_json"]["GameId"]}?lang={LANG}')
+    full = message['text'].split()[0] in ['/fscreen', '/фскрин']
+    send_screen(message['peer_id'], f'https://{CUR_PARAMS[message['peer_id']]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[message['peer_id']]["cur_json"]["GameId"]}?lang={LANG}', full)
 
 
 # Отправить информацию о текущем уровне
@@ -227,7 +239,7 @@ def send_curlevel_info(cur_chat, cur_json):
         gameinfo_str += 'Автопереход отсутствует\n'
     if cur_json["Level"]["HasAnswerBlockRule"]:
         gameinfo_str += f'ВНИМАНИЕ, БЛОКИРОВКА ОТВЕТОВ! НЕ БОЛЕЕ {cur_json["Level"]["AttemtsNumber"]} ПОПЫТОК ЗА {datetime.timedelta(seconds=cur_json["Level"]["AttemtsPeriod"])} ДЛЯ {"КОМАНДЫ" if cur_json["Level"]["BlockTargetId"] == 2 else "ИГРОКА"}'
-    BOT.send_message(cur_chat, gameinfo_str)
+    BOT.send_message(cur_chat, gameinfo_str, CUR_PARAMS[cur_chat]['parser'])
 
     # Отдельно выводим задание
     if len(cur_json['Level']['Tasks']) > 0:
@@ -238,13 +250,13 @@ def send_curlevel_info(cur_chat, cur_json):
 
     # Если очень большой текст на уровне, то сплит
     for i in range(0, len(gamelevel_str), TASK_MAX_LEN):
-        BOT.send_message(cur_chat, gamelevel_str[i:i + TASK_MAX_LEN])
+        BOT.send_message(cur_chat, gamelevel_str[i:i + TASK_MAX_LEN], CUR_PARAMS[cur_chat]['parser'])
 
 
 def check_engine(cur_chat_id):
     try:
         game_json = CUR_PARAMS[cur_chat_id]["session"].get(f'https://{CUR_PARAMS[cur_chat_id]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[cur_chat_id]["cur_json"]["GameId"]}?json=1&lang={LANG}').json()
-    except requests.exceptions.ConnectionError as CE:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as CE:
         print(f'Ошибка соединения {CE}, переподключаюсь')
         return True
 
@@ -315,8 +327,8 @@ def check_engine(cur_chat_id):
                 CUR_PARAMS[cur_chat_id]['5_min_sent'] = False
                 CUR_PARAMS[cur_chat_id]['1_min_sent'] = False
                 BOT.send_message(cur_chat_id, 'АП!\n' + ' '.join(CUR_PARAMS[cur_chat_id].get('players', '')))
-                if SEND_SCREEN:
-                    send_screen(cur_chat_id, f'https://{CUR_PARAMS[cur_chat_id]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[cur_chat_id]["cur_json"]["GameId"]}?lang={LANG}')
+                if CUR_PARAMS[cur_chat_id]['send_screen']:
+                    send_screen(cur_chat_id, f'https://{CUR_PARAMS[cur_chat_id]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[cur_chat_id]["cur_json"]["GameId"]}?lang={LANG}', full=True)
 
                 # отключение ввода кодов при обнаружении штрафных
                 if len(game_json['Level']['Tasks']) > 0:
@@ -351,7 +363,7 @@ def check_engine(cur_chat_id):
             # проверка на сообщения на уровне:
             for elem in game_json['Level']['Messages']:
                 if elem not in old_json['Level']['Messages']:
-                    BOT.send_message(cur_chat_id, f'Добавлено сообщение: {elem["MessageText"]}')
+                    BOT.send_message(cur_chat_id, f'Добавлено сообщение: {elem["MessageText"]}', CUR_PARAMS[cur_chat_id]['parser'])
 
             # проверка на количество секторов на уровне:
             if len(old_json['Level']['Sectors']) != len(game_json['Level']['Sectors']):
@@ -378,7 +390,7 @@ def check_engine(cur_chat_id):
                 for i, elem in enumerate(CUR_PARAMS[cur_chat_id]["cur_json"]['Level']['Helps']):
                     if elem['HelpText'] != old_json['Level']['Helps'][i]['HelpText']:
                         # BOT.send_message(cur_chat_id, f'Подсказка {i + 1}: {elem["HelpText"]}')
-                        BOT.send_message(cur_chat_id, f'Подсказка {i + 1}: {elem["HelpText"]}')
+                        BOT.send_message(cur_chat_id, f'Подсказка {i + 1}: {elem["HelpText"]}', CUR_PARAMS[cur_chat_id]['parser'])
                         send_kml_info(cur_chat_id, elem["HelpText"], f'{CUR_PARAMS[cur_chat_id]["cur_json"]["Level"]["Number"]}_{i+1}')
 
             # мониторинг закрытия секторов
@@ -394,7 +406,7 @@ def check_engine(cur_chat_id):
             if CUR_PARAMS[cur_chat_id]['bonus_monitor']:
                 for elem in game_json['Level']['Bonuses']:
                     if elem not in old_json['Level']['Bonuses'] and elem["IsAnswered"] and (elem['BonusId'] not in CUR_PARAMS[cur_chat_id]['sector_closers']):
-                        BOT.send_message(cur_chat_id, f'{"🔴" if elem["Negative"] else "🟢"} №{elem["Number"]} {elem["Name"] or ""} {elem["Answer"]["Answer"]} ({elem["Answer"]["Login"]}) {"Штраф: " if elem["Negative"] else "Бонус: "} {datetime.timedelta(seconds=elem["AwardTime"])}\n{"Подсказка бонуса:" + chr(10) + elem["Help"] if elem["Help"] else ""}')
+                        BOT.send_message(cur_chat_id, f'{"🔴" if elem["Negative"] else "🟢"} №{elem["Number"]} {elem["Name"] or ""} {elem["Answer"]["Answer"]} ({elem["Answer"]["Login"]}) {"Штраф: " if elem["Negative"] else "Бонус: "} {datetime.timedelta(seconds=elem["AwardTime"])}\n{"Подсказка бонуса:" + chr(10) + elem["Help"] if elem["Help"] else ""}', CUR_PARAMS[cur_chat_id]['parser'])
 
                         if elem["Help"]:
                             send_kml_info(cur_chat_id, elem["Help"], CUR_PARAMS[cur_chat_id]["cur_json"]["Level"]["Number"])
@@ -538,7 +550,6 @@ def cmd_hint(message):
     except Exception as e:
         BOT.send_message(message['peer_id'], f'Ошибка, возможно необходимо заново авторизоваться: {e}')
         logging.error(f"Ошибка, возможно необходимо заново авторизоваться: {e}", exc_info=True)
-
         return
 
     if game_json['Event'] != 0:
@@ -552,7 +563,7 @@ def cmd_hint(message):
             result_str += f'Подсказка {elem["Number"]}: Будет через {datetime.timedelta(seconds=elem["RemainSeconds"])}\n{"_"*30}\n\n'
     if result_str == '':
         result_str = 'Нет подсказок'
-    BOT.send_message(message['peer_id'], result_str)
+    BOT.send_message(message['peer_id'], result_str, CUR_PARAMS[message['peer_id']]['parser'])
 
 
 @BOT.message_handler(commands=['task', 'таск'])
@@ -571,8 +582,10 @@ def cmd_open_browser(message):
     my_options = Options()
     my_options.set_preference("general.useragent.override", USER_AGENT['User-agent'])
     my_driver = webdriver.Firefox(options=my_options)
-    my_driver.get(f'https://{CUR_PARAMS[message['peer_id']]["cur_domain"]}')
-    my_driver.add_cookie({'name': 'atoken', 'value': CUR_PARAMS[message['peer_id']]['session'].cookies.get_dict()['atoken'], 'domain': '.en.cx', 'secure': False, 'httpOnly': True, 'session': True})
+    # my_driver.get(f'https://{CUR_PARAMS[message['peer_id']]["cur_domain"]}')
+    my_driver.get(f'https://{CUR_PARAMS[message['peer_id']]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[message['peer_id']]["cur_json"]["GameId"]}')
+    # my_driver.add_cookie({'name': 'atoken', 'value': CUR_PARAMS[message['peer_id']]['session'].cookies.get_dict()['atoken'], 'domain': '.en.cx', 'secure': False, 'httpOnly': True, 'session': True})
+    my_driver.add_cookie({'name': 'atoken', 'value': CUR_PARAMS[message['peer_id']]['session'].cookies.get_dict()['atoken'], 'domain': '.' + CUR_PARAMS[message['peer_id']]['cur_domain'], 'secure': False, 'httpOnly': True, 'session': True})
     my_driver.add_cookie({'name': 'stoken', 'value': CUR_PARAMS[message['peer_id']]['session'].cookies.get_dict()['stoken'], 'domain': '.' + CUR_PARAMS[message['peer_id']]['cur_domain'], 'secure': False, 'httpOnly': False, 'session': True})
     my_driver.get(f'https://{CUR_PARAMS[message['peer_id']]["cur_domain"]}/GameEngines/Encounter/Play/{CUR_PARAMS[message['peer_id']]["cur_json"]["GameId"]}')
 
@@ -597,10 +610,12 @@ def cmd_time(message):
 
 @BOT.message_handler(commands=['sector', 'sectors', 'сектор', 'секторы', 'sectors_left'])
 def cmd_sectors(message):
+    # Для работы кнопок, там идет сначала обращение к боту
     if message['text'].startswith('['):
         text = message['text'].split(maxsplit=1)[1]
     else:
         text = message['text']
+
     # Если указан номер уровня, то загружаем из OLD_LEVELS
     cmd = text[1:].split()[0].lower()
     if len(text.split()) == 2:
@@ -674,7 +689,7 @@ def cmd_bonuses(message):
         result_str = 'Нет бонусов'
 
     for i in range(0, len(result_str), TASK_MAX_LEN):
-        BOT.send_message(message['peer_id'], result_str[i:i + TASK_MAX_LEN])
+        BOT.send_message(message['peer_id'], result_str[i:i + TASK_MAX_LEN], CUR_PARAMS[message['peer_id']]['parser'])
 
 
 @BOT.message_handler(commands=['load_old_json'])
@@ -687,12 +702,15 @@ def cmd_load_old_json(message):
         BOT.send_message(message['peer_id'], 'Файл не существует')
 
 
-@BOT.message_handler(commands=['accept_codes', 'sector_monitor', 'bonus_monitor', 'route_builder'])
+@BOT.message_handler(commands=['accept_codes', 'sector_monitor', 'bonus_monitor', 'route_builder', 'send_screen', 'parser'])
 def switch_flag(message):
     d = {'accept_codes': 'Прием кодов',
          'sector_monitor': 'Мониторинг секторов',
          'bonus_monitor': 'Мониторинг бонусов',
-         'route_builder': 'Построитель маршрутов'}
+         'route_builder': 'Построитель маршрутов',
+         'send_screen': 'Отправитель скринов',
+         'parser': 'Парсер HTML'
+         }
     cmd = message['text'][1:].split()[0].split('@')[0].lower()
     if len(message['text'].split()) == 2 and message['text'].split()[1] == '0':
         cmd_flag = False
@@ -770,11 +788,20 @@ def cmd_del_kb(message):
     BOT.remove_keyboard(message['peer_id'])
 
 
+@BOT.message_handler(commands=['w', 'wf'])
+def cmd_w(message):
+    full = (message['text'].split()[0] == '/wf')
+    if message['peer_id'] in CUR_PARAMS:
+        send_screen(message['peer_id'], f'https://ru.wikipedia.org/wiki/{message['text'].split(maxsplit=1)[1]}', full=full)
+    else:
+        BOT.send_message(message['peer_id'], 'команда доступна только в авторизованном чате')
+
+
 # Запуск бота
 if __name__ == "__main__":
     try:
         BOT.run()
     except KeyboardInterrupt:
         logging.info("Бот остановлен вручную.")
-    except Exception as e:
-        logging.critical(f"Критическая ошибка работы бота: {e}", exc_info=True)
+    except Exception as exc:
+        logging.critical(f"Критическая ошибка работы бота: {exc}", exc_info=True)

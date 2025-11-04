@@ -7,9 +7,9 @@ import threading
 import logging
 import time
 import queue
-import base64
-import io
 import requests
+from bs4 import BeautifulSoup  # pip install BeautifulSoup4
+
 
 class VkBot:
     def __init__(self, token: str, group_id: int):
@@ -49,6 +49,7 @@ class VkBot:
         except Exception as e:
             logging.error(f"Ошибка при отправке геопозиции в {peer_id}: {e}")
 
+    '''
     def send_photo_from_base64(self, base64_data, peer_id_for_upload, image_text):
         try:
             image_data = base64.b64decode(base64_data)
@@ -60,6 +61,7 @@ class VkBot:
         except Exception as e:
             print(f"Ошибка при загрузке фотографии: {e}")
             return None
+    '''
 
     def send_answer(self):
         # Декоратор для регистрации обработчика неизвестных команд (для отправки кодов). Может быть только один такой обработчик.
@@ -71,13 +73,18 @@ class VkBot:
             return func
         return decorator
 
-    def send_message(self, peer_id: int, message: str):
+    def send_message(self, peer_id: int, message: str, parse_html_flag=False):
         # Отправляет сообщение в чат
         try:
-            self.vk.messages.send(peer_id=peer_id, message=message, random_id=get_random_id())
+            if parse_html_flag:
+                new_message = self.parse_html(message)
+            else:
+                new_message = message
+            print(new_message)
+            self.vk.messages.send(peer_id=peer_id, message=new_message, random_id=get_random_id())
+
         except Exception as e:
             logging.error(f"Ошибка при отправке сообщения в {peer_id}: {e}")
-
 
     def send_keyboard(self, peer_id: int):
         keyboard = VkKeyboard(one_time=False)
@@ -90,7 +97,6 @@ class VkBot:
         keyboard.add_button('/del_kb')
         self.vk.messages.send(peer_id=peer_id, message='кнопки добавлены', keyboard=keyboard.get_keyboard(), random_id=get_random_id())
 
-
     def remove_keyboard(self, peer_id: int):
         self.vk.messages.send(peer_id=peer_id, message='кнопки убраны', keyboard=VkKeyboard().get_empty_keyboard(), random_id=get_random_id())
 
@@ -98,7 +104,7 @@ class VkBot:
         # Обрабатывает входящее сообщение и ставит задачу в очередь
         message = event.obj.message
         text = message.get('text', '').strip()
-        #Если сначала обращение к боту, то отбрасываем его
+        # Если сначала обращение к боту, то отбрасываем его
         if text.startswith('['):
             text = text.split(maxsplit=1)[1]
 
@@ -158,7 +164,7 @@ class VkBot:
             except KeyboardInterrupt:
                 logging.info("Бот остановлен вручную.")
                 break
-            except requests.exceptions.ConnectionError as ce:
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as ce:
                 logging.error(f'Ошибка соединения {ce}')
                 time.sleep(10)
             except TimeoutError as te:
@@ -171,3 +177,33 @@ class VkBot:
         self._worker_queue.join()
         worker_thread.join()
         logging.info("Бот завершил работу.")
+
+    @staticmethod
+    def parse_html(html_content):
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            for img_tag in soup.find_all('img'):
+                src = img_tag.get('src')
+                if src:
+                    inline_image_text = f"[Img: {src}]"
+                    img_tag.replace_with(inline_image_text + " ")
+                else:
+                    img_tag.decompose()
+
+            for br_tag in soup.find_all(['br', 'br/']):
+                br_tag.replace_with('\n')
+
+            for a_tag in soup.find_all('a'):
+                href = a_tag.get('href')
+                link_text = a_tag.get_text(strip=True)
+                if href and link_text:
+                    inline_link_text = f"[{link_text}]({href})"
+                    a_tag.replace_with(inline_link_text)
+                else:
+                    a_tag.replace_with(link_text)
+
+            text_content = soup.get_text()
+        except Exception as e:
+            text_content = f'Ошибка парсинга текста: {e} \n {html_content}'
+
+        return text_content
