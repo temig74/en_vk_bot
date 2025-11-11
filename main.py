@@ -112,7 +112,7 @@ async def send_screen(peer_id, link, full=False):
 
 def parse_html(html_content):
     try:
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, 'lxml')
         for img_tag in soup.find_all('img'):
             src = img_tag.get('src')
             if src:
