@@ -36,7 +36,7 @@ try:
     USE_BROWSER = True if config['Settings']['Use_browser'].lower() == 'true' else False
 
 except Exception as se:
-    print(f'Error reading settings.ini config: {se}')
+    logging.error(f"Error reading settings.ini config: {se}")
     exit(1)
 
 # Настройка логирования
