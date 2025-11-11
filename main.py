@@ -45,7 +45,7 @@ folder_path = os.path.join(os.curdir, 'level_snapshots')
 if not os.path.exists(folder_path):
     os.makedirs(folder_path)
 
-if not VK_TOKEN:
+if not 'VK_TOKEN' in globals() or not VK_TOKEN:
     logging.error("Пожалуйста, установите переменную VK_TOKEN в settings.ini")
     exit(1)
 
