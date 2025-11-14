@@ -125,7 +125,7 @@ async def cmd_auth(message: Message, args: list[str], peer_id: int, from_):
         return
     if not args:
         await message.answer('Введите команду в формате /auth домен id_игры логин пароль [id_чата]')
-    if len(args) == 5 and args[4].isdigit():
+    if len(args) == 5 and args[4].lstrip('-').isdigit():
         cur_chat_id = int(args[4])
     elif len(args) == 4:
         cur_chat_id = peer_id
