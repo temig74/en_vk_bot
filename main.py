@@ -120,7 +120,7 @@ async def cmd_help(message: Message):
 
 @dp.message(CmdFilter(['auth'], [0, 4, 5]))
 async def cmd_auth(message: Message, args: list[str], peer_id: int, from_):
-    if str(from_) not in ADMIN_USERNAMES:
+    if from_ not in ADMIN_USERNAMES:
         await message.answer('Недостаточно прав для авторизации бота')
         return
     if not args:
