@@ -221,6 +221,7 @@ class EncounterBot:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_full_page_screenshot_as_base64()))
         else:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_screenshot_as_base64()))
+            pixel_h = 683
         img_buffer.name = f'{pixel_h}_screen_file.png'
         return img_buffer
 
@@ -242,6 +243,7 @@ class EncounterBot:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_full_page_screenshot_as_base64()))
         else:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_screenshot_as_base64()))
+            pixel_h = 683
         img_buffer.name = f'{pixel_h}_{article}.png'
         return img_buffer
 
