@@ -214,11 +214,14 @@ class EncounterBot:
         if not (driver := self.cur_chats[peer_id].get('driver')):
             return
         driver.get(f'https://{self.cur_chats[peer_id]["cur_domain"]}/GameEngines/Encounter/Play/{self.cur_chats[peer_id]["cur_json"]["GameId"]}?lang={self.globalconfig['LANG']}')
+        css_h = driver.execute_script("return document.documentElement.scrollHeight;")
+        dpr = driver.execute_script("return window.devicePixelRatio || 1;")
+        pixel_h = int(css_h * dpr)
         if full:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_full_page_screenshot_as_base64()))
         else:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_screenshot_as_base64()))
-        img_buffer.name = 'screen_file.png'
+        img_buffer.name = f'{pixel_h}_screen_file.png'
         return img_buffer
 
     # Оборачиваем получение скринов в асинхронную обертку, т.к. Selenium синхронный
@@ -232,11 +235,14 @@ class EncounterBot:
             return
         base_url = 'https://ru.wikipedia.org/wiki/'
         driver.get(base_url+article)
+        css_h = driver.execute_script("return document.documentElement.scrollHeight;")
+        dpr = driver.execute_script("return window.devicePixelRatio || 1;")
+        pixel_h = int(css_h * dpr)
         if full:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_full_page_screenshot_as_base64()))
         else:
             img_buffer = io.BytesIO(base64.b64decode(driver.get_screenshot_as_base64()))
-        img_buffer.name = f'{article}.png'
+        img_buffer.name = f'{pixel_h}_{article}.png'
         return img_buffer
 
     async def get_res_screen_as_bytes_async(self, peer_id, article, full=False) -> io.BytesIO | None:
