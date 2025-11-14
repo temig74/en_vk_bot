@@ -27,14 +27,14 @@ if not globals().get('VK_TOKEN'):
 
 VK_BOT = Bot(token=VK_TOKEN)
 doc_uploader = DocMessagesUploader(VK_BOT.api)
-
+dp = VK_BOT.on
 
 async def init_bot_info() -> None:
     group_info = await VK_BOT.api.groups.get_by_id()
     VK_BOT.group_id = group_info.groups[0].id
 
 
-class MyRule(ABCRule[Message]):
+class CmdFilter(ABCRule[Message]):
     def __init__(self, commands: list[str], args_count: Union[list[int], None]):
         self.commands = commands
         self.args_count = args_count
@@ -79,7 +79,7 @@ EN_BOT = EncounterBot(sender_function)
 
 
 # далее команды бота
-@VK_BOT.on.message(MyRule(['help', 'start'], [0]))
+@dp.message(CmdFilter(['help', 'start'], [0]))
 async def cmd_help(message: Message):
     await message.answer(r'''Temig vk enbot v1.02
     https://github.com/temig74
@@ -118,7 +118,7 @@ async def cmd_help(message: Message):
     ''')
 
 
-@VK_BOT.on.message(MyRule(['auth'], [0, 4, 5]))
+@dp.message(CmdFilter(['auth'], [0, 4, 5]))
 async def cmd_auth(message: Message, args: list[str], peer_id: int):
     if str(message.from_id) not in ADMIN_USERNAMES:
         await message.answer('Недостаточно прав для авторизации бота')
@@ -139,14 +139,14 @@ async def cmd_auth(message: Message, args: list[str], peer_id: int):
     await EN_BOT.auth(cur_chat_id, my_domain, my_game_id, my_login, my_password)
 
 
-@VK_BOT.on.message(MyRule(['screen', 'скрин', 'fscreen', 'фскрин'], [0]))
+@dp.message(CmdFilter(['screen', 'скрин', 'fscreen', 'фскрин'], [0]))
 async def cmd_screen(message: Message, command: str, peer_id: int):
     full = command in ['fscreen', 'фскрин']
     screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full)
     await sender_function(peer_id, screen_bytes)
 
 
-@VK_BOT.on.message(MyRule(['game_monitor'], [0, 1]))
+@dp.message(CmdFilter(['game_monitor'], [0, 1]))
 async def cmd_game_monitor(message: Message, args: list[str], peer_id: int):
     if args and args[0] == '0':
         state = False
@@ -155,7 +155,7 @@ async def cmd_game_monitor(message: Message, args: list[str], peer_id: int):
     await EN_BOT.game_monitor(peer_id, state)
 
 
-@VK_BOT.on.message(MyRule(['stop_auth'], [0]))
+@dp.message(CmdFilter(['stop_auth'], [0]))
 async def cmd_stop_auth(message: Message, peer_id: int):
     if str(message.from_id) not in ADMIN_USERNAMES:
         await message.answer('Недостаточно прав для отключения авторизации бота')
@@ -163,18 +163,18 @@ async def cmd_stop_auth(message: Message, peer_id: int):
     await EN_BOT.stop_auth(peer_id)
 
 
-@VK_BOT.on.message(MyRule(['get_id'], [0]))
+@dp.message(CmdFilter(['get_id'], [0]))
 async def cmd_get_id(message: Message, peer_id: int):
     await message.answer(f'id чата: {peer_id}\nid пользователя: {message.from_id}')
 
 
-@VK_BOT.on.message(MyRule(['h', 'hint'], [0]))
+@dp.message(CmdFilter(['h', 'hint'], [0]))
 async def cmd_hint(message: Message, peer_id: int):
     hint_str = await EN_BOT.get_hints(peer_id)
     await sender_function(peer_id, hint_str)
 
 
-@VK_BOT.on.message(MyRule(['t', 'task'], [0]))
+@dp.message(CmdFilter(['t', 'task'], [0]))
 async def cmd_task(message: Message, peer_id: int):
     task_str = await EN_BOT.get_task(peer_id)
     await sender_function(peer_id, task_str)
@@ -182,7 +182,7 @@ async def cmd_task(message: Message, peer_id: int):
     await sender_function(peer_id, hint_str)
 
 
-@VK_BOT.on.message(MyRule(['open_browser'], [0]))
+@dp.message(CmdFilter(['open_browser'], [0]))
 async def cmd_open_browser(message: Message, peer_id: int):
     if str(message.from_id) not in ADMIN_USERNAMES:
         await message.answer('Недостаточно прав для запуска браузера')
@@ -190,13 +190,13 @@ async def cmd_open_browser(message: Message, peer_id: int):
     await EN_BOT.open_browser(peer_id)
 
 
-@VK_BOT.on.message(MyRule(['time'], [0]))
+@dp.message(CmdFilter(['time'], [0]))
 async def cmd_time(message: Message, peer_id: int):
     time_str = await EN_BOT.get_time(peer_id)
     await sender_function(peer_id, time_str)
 
 
-@VK_BOT.on.message(MyRule(['s', 'sectors', 'sectors_left', 'b', 'bonuses'], [0, 1]))
+@dp.message(CmdFilter(['s', 'sectors', 'sectors_left', 'b', 'bonuses'], [0, 1]))
 async def cmd_sectors(message: Message, command: str, args: list[str], peer_id: int):
     sector = True if command in ['s', 'sectors', 'sectors_left'] else False
     levelnum = args[0] if args else '0'
@@ -204,39 +204,39 @@ async def cmd_sectors(message: Message, command: str, args: list[str], peer_id: 
     await sender_function(peer_id, result_str)
 
 
-@VK_BOT.on.message(MyRule(['load_old_json'], [0]))
+@dp.message(CmdFilter(['load_old_json'], [0]))
 async def cmd_load_old_json(message: Message, peer_id: int):
     await EN_BOT.load_old_json(peer_id)
 
 
-@VK_BOT.on.message(MyRule(['accept_codes', 'sector_monitor', 'bonus_monitor', 'send_screen', 'parser', 'send_code_in_block', 'route_builder'], [0, 1]))
+@dp.message(CmdFilter(['accept_codes', 'sector_monitor', 'bonus_monitor', 'send_screen', 'parser', 'send_code_in_block', 'route_builder'], [0, 1]))
 async def switch_flag(message: Message, command: str, args: list[str], peer_id: int):
     switch = False if (args and args[0] == '0') else True
     await EN_BOT.switch_flag(peer_id, command, switch)
 
 
-@VK_BOT.on.message(MyRule(['set_players'], None))
+@dp.message(CmdFilter(['set_players'], None))
 async def cmd_set_players(message: Message, args: list[str], peer_id: int):
     await EN_BOT.set_players(peer_id, args)
 
 
-@VK_BOT.on.message(MyRule(['set_doc'], [0, 1]))
+@dp.message(CmdFilter(['set_doc'], [0, 1]))
 async def cmd_set_doc(message: Message, args: list[str], peer_id: int):
     await EN_BOT.set_doc(peer_id, args[0] if args else None)
 
 
-@VK_BOT.on.message(MyRule(['set_coords'], [2]))
+@dp.message(CmdFilter(['set_coords'], [2]))
 async def cmd_set_doc(message: Message, args: list[str], peer_id: int):
     await EN_BOT.set_coords(peer_id, args)
 
 
-@VK_BOT.on.message(MyRule(['game_info'], [0]))
+@dp.message(CmdFilter(['game_info'], [0]))
 async def cmd_game_info(message: Message, peer_id: int):
     game_str = await EN_BOT.get_game_info(peer_id)
     await sender_function(peer_id, game_str)
 
 
-@VK_BOT.on.message(MyRule(['*', 'geo'], [0, 2]))
+@dp.message(CmdFilter(['*', 'geo'], [0, 2]))
 async def cmd_geo(message: Message, args: list[str]):
     if args:
         await message.answer(message='', lat=args[0], long=args[1])
@@ -244,7 +244,7 @@ async def cmd_geo(message: Message, args: list[str]):
         await message.answer('Введите широту и долготу после команды через пробел')
 
 
-@VK_BOT.on.message(MyRule(['w', 'wf'], None))
+@dp.message(CmdFilter(['w', 'wf'], None))
 async def cmd_w(message: Message, command: str, args: list[str], peer_id: int):
     if args:
         article = ' '.join(args)
@@ -256,7 +256,7 @@ async def cmd_w(message: Message, command: str, args: list[str], peer_id: int):
     await sender_function(peer_id, screen_bytes)
 
 
-@VK_BOT.on.message(MyRule(['buttons'], [0]))
+@dp.message(CmdFilter(['buttons'], [0]))
 async def cmd_buttons(message: Message):
     keyboard = (
         Keyboard(one_time=False, inline=False)
@@ -270,12 +270,12 @@ async def cmd_buttons(message: Message):
     await message.answer(message='клавиатура добавлена', keyboard=keyboard.get_json())
 
 
-@VK_BOT.on.message(MyRule(['del_kb'], [0]))
+@dp.message(CmdFilter(['del_kb'], [0]))
 async def cmd_del_kb(message: Message):
     await message.answer(message='клавиатура удалена', keyboard=EMPTY_KEYBOARD)
 
 
-@VK_BOT.on.message(text=['/<answer>'])
+@dp.message(text=['/<answer>'])
 async def cmd_send_answer(message: Message, answer: str):
     # со ссылками сообщения отправляются дважды, нужно их фильтровать
     if message.attachments:
