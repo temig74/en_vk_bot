@@ -508,7 +508,7 @@ class EncounterBot:
         return True
 
     # список игроков для тегания например при АПе уровня
-    async def set_players(self, peer_id, players_list: str) -> bool:
+    async def set_players(self, peer_id, players_list: list[str]) -> bool:
         chat_data = self.cur_chats.get(peer_id)
         if not chat_data:
             await self.message_func(peer_id, 'Чат не авторизован')
