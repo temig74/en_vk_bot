@@ -237,9 +237,9 @@ async def cmd_game_info(message: Message, peer_id: int):
 
 
 @dp.message(CmdFilter(['*', 'geo'], [0, 2]))
-async def cmd_geo(message: Message, args: list[str]):
+async def cmd_geo(message: Message, args: list[str], peer_id: int):
     if args:
-        await message.answer(message='', lat=args[0], long=args[1])
+        await sender_function(peer_id, [args])
     else:
         await message.answer('Введите широту и долготу после команды через пробел')
 
