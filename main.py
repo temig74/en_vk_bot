@@ -62,7 +62,7 @@ class CmdFilter(ABCRule[Message]):
             return False
         args = input_split[1:] if len(input_split) > 1 else None
         peer_id = event.peer_id
-        return {'command': command, 'args': args, 'peer_id': peer_id}
+        return {'command': command, 'args': args, 'peer_id': peer_id, 'from_': str(event.from_id)}
 
 
 async def sender_function(peer_id, message):
@@ -119,8 +119,8 @@ async def cmd_help(message: Message):
 
 
 @dp.message(CmdFilter(['auth'], [0, 4, 5]))
-async def cmd_auth(message: Message, args: list[str], peer_id: int):
-    if str(message.from_id) not in ADMIN_USERNAMES:
+async def cmd_auth(message: Message, args: list[str], peer_id: int, from_):
+    if str(from_) not in ADMIN_USERNAMES:
         await message.answer('Недостаточно прав для авторизации бота')
         return
     if not args:
@@ -156,16 +156,16 @@ async def cmd_game_monitor(message: Message, args: list[str], peer_id: int):
 
 
 @dp.message(CmdFilter(['stop_auth'], [0]))
-async def cmd_stop_auth(message: Message, peer_id: int):
-    if str(message.from_id) not in ADMIN_USERNAMES:
+async def cmd_stop_auth(message: Message, peer_id: int, from_: str):
+    if from_ not in ADMIN_USERNAMES:
         await message.answer('Недостаточно прав для отключения авторизации бота')
         return
     await EN_BOT.stop_auth(peer_id)
 
 
 @dp.message(CmdFilter(['get_id'], [0]))
-async def cmd_get_id(message: Message, peer_id: int):
-    await message.answer(f'id чата: {peer_id}\nid пользователя: {message.from_id}')
+async def cmd_get_id(message: Message, peer_id: int, from_: str):
+    await message.answer(f'id чата: {peer_id}\nпользователь: {from_}')
 
 
 @dp.message(CmdFilter(['h', 'hint'], [0]))
@@ -183,8 +183,8 @@ async def cmd_task(message: Message, peer_id: int):
 
 
 @dp.message(CmdFilter(['open_browser'], [0]))
-async def cmd_open_browser(message: Message, peer_id: int):
-    if str(message.from_id) not in ADMIN_USERNAMES:
+async def cmd_open_browser(message: Message, peer_id: int, from_: str):
+    if from_ not in ADMIN_USERNAMES:
         await message.answer('Недостаточно прав для запуска браузера')
         return
     await EN_BOT.open_browser(peer_id)
