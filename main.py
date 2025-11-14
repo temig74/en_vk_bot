@@ -88,10 +88,10 @@ async def cmd_help(message: Message):
     /stop_auth - отключить чат
     /get_id - получить id чата и пользователя
     /game_monitor [0] - включить/[отключить] слежение за игрой
-    /s, /sector [level№] - показать сектора [прошедшего_уровня]
+    /s, /sectors [level№] - показать сектора [прошедшего_уровня]
     /sectors_left - оставшиеся сектора на уровне
     /b, /bonuses [level№] - показать бонусы [прошедшего_уровня]
-    /h, /hint - показать подсказки
+    /h, /hints - показать подсказки
     /t, /task - показать текущее задание
     /screen, /скрин - скриншот текущего уровня (необходим firefox)
     /fscreen, /фскрин - полный скриншот текущего уровня (необходим firefox)
@@ -168,7 +168,7 @@ async def cmd_get_id(message: Message, peer_id: int, from_: str):
     await message.answer(f'id чата: {peer_id}\nпользователь: {from_}')
 
 
-@dp.message(CmdFilter(['h', 'hint'], [0]))
+@dp.message(CmdFilter(['h', 'hints'], [0]))
 async def cmd_hint(message: Message, peer_id: int):
     hint_str = await EN_BOT.get_hints(peer_id)
     await sender_function(peer_id, hint_str)
