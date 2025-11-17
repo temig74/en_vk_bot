@@ -1,0 +1,7 @@
+level_snapshots/
+dist/
+build/
+.venv/
+en_vk_bot.spec
+.idea/
+
