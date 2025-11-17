@@ -81,7 +81,7 @@ async def sender_function(peer_id, message):
 # далее команды бота
 @dp.message(CmdFilter(['help', 'start'], [0]))
 async def cmd_help(message: Message):
-    await message.answer(r'''Temig vk enbot v1.02
+    await message.answer(r'''Temig vk enbot v1.03
     https://github.com/temig74
     /help, /start - этот help
     /auth домен id_игры логин пароль [id_чата] - авторизовать бота на игру в игровом чате (или в личке, добавив id_чата)
