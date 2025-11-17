@@ -28,6 +28,8 @@ if not globals().get('VK_TOKEN'):
 VK_BOT = Bot(token=VK_TOKEN)
 doc_uploader = DocMessagesUploader(VK_BOT.api)
 dp = VK_BOT.on
+EN_BOT: EncounterBot | None = None
+
 
 async def init_bot_info() -> None:
     group_info = await VK_BOT.api.groups.get_by_id()
@@ -75,8 +77,6 @@ async def sender_function(peer_id, message):
     if isinstance(message, list):
         await VK_BOT.api.messages.send(peer_id=peer_id, message=f'{message[0][0]}, {message[0][1]}', lat=message[0][0], long=message[0][1], random_id=random.getrandbits(32))
 
-EN_BOT = EncounterBot(sender_function)
-
 
 # далее команды бота
 @dp.message(CmdFilter(['help', 'start'], [0]))
@@ -93,8 +93,8 @@ async def cmd_help(message: Message):
     /b, /bonuses [level№] - показать бонусы [прошедшего_уровня]
     /h, /hints - показать подсказки
     /t, /task - показать текущее задание
-    /screen, /скрин - скриншот текущего уровня (необходим firefox)
-    /fscreen, /фскрин - полный скриншот текущего уровня (необходим firefox)
+    /screen, /скрин - скриншот текущего уровня
+    /fscreen, /фскрин - полный скриншот текущего уровня
     /любой_код123 - вбитие в движок любой_код123
     /!любой_код123 - вбитие в сектор любой_код123 (актуально при блокировке)
     /accept_codes [0] - включить/[выключить] прием кодов из чата
@@ -109,7 +109,7 @@ async def cmd_help(message: Message):
     /load_old_json - загрузить информацию о прошедших уровнях игры из файла (при перезапуске бота)
     /geo или /* координаты через пробел - отправить геометку по координатам
     /set_players @игрок1 @игрок2... - установить список полевых игроков
-    /open_browser открыть бразуер на компьютере, где запущен бот, привязанный к сессии бота (необходим firefox)
+    /open_browser открыть бразуер на компьютере, где запущен бот, привязанный к сессии бота
     /game_info - информация об игре
     /set_doc - установить ссылку на гуглдок
     /buttons - добавить клавиатуру с кнопками
@@ -252,7 +252,7 @@ async def cmd_w(message: Message, command: str, args: list[str], peer_id: int):
         await message.answer('Введите название статьи после команды')
         return
     full = (command == 'wf')
-    screen_bytes = await EN_BOT.get_res_screen_as_bytes_async(peer_id, article, full)
+    screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full, article)
     await sender_function(peer_id, screen_bytes)
 
 
@@ -291,8 +291,13 @@ async def cmd_send_answer(message: Message, answer: str):
     await sender_function(message.peer_id, answer_reply)
 
 
-if __name__ == "__main__":
+async def startup_task():
+    global EN_BOT
+    EN_BOT = await EncounterBot.create(sender_function)
+
+if __name__ == '__main__':
     try:
+        VK_BOT.loop_wrapper.on_startup.append(startup_task())
         VK_BOT.run_forever()
     except KeyboardInterrupt:
         logging.info("Бот остановлен вручную.")
