@@ -4,4 +4,5 @@ build/
 .venv/
 en_vk_bot.spec
 .idea/
-
+en_settings.ini
+vk_settings.ini
