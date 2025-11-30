@@ -197,11 +197,11 @@ async def cmd_time(message: Message, peer_id: int):
     await sender_function(peer_id, time_str)
 
 
-@dp.message(CmdFilter(['s', 'sectors', 'sectors_left', 'b', 'bonuses'], [0, 1]))
+@dp.message(CmdFilter(['s', 'sectors', 'sectors_left', 'b', 'bonuses', 'bonuses_left'], [0, 1]))
 async def cmd_sectors(message: Message, command: str, args: list[str], peer_id: int):
     sector = True if command in ['s', 'sectors', 'sectors_left'] else False
     levelnum = args[0] if args else '0'
-    result_str = await EN_BOT.get_sectors_and_bonuses(peer_id, sector, levelnum, True if command == 'sectors_left' else False)
+    result_str = await EN_BOT.get_sectors_and_bonuses(peer_id, sector, levelnum, True if command in ['sectors_left', 'bonuses_left'] else False)
     await sender_function(peer_id, result_str)
 
 
