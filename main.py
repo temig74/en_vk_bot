@@ -116,6 +116,8 @@ async def cmd_help(message: Message):
     /buttons - добавить клавиатуру с кнопками
     /w название_статьи - скрин статьи из вики
     /wf название_статьи - полный скрин статьи из вики
+    /set_level номер_уровня - установить текущий номер уровня (актуально для штурма)
+    /levels - список уровней
     ''')
 
 
@@ -256,6 +258,19 @@ async def cmd_w(message: Message, command: str, args: list[str], peer_id: int):
     full = (command == 'wf')
     screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full, article)
     await sender_function(peer_id, screen_bytes)
+
+
+@dp.message(CmdFilter(['set_level'], [1]))
+async def cmd_set_level(message: Message, command: str, args: list[str], peer_id: int):
+    try:
+        await EN_BOT.set_level(peer_id, int(args[0]))
+    except:
+        await message.answer('Некорректный номер уровня')
+
+
+@dp.message(CmdFilter(['levels'], [0]))
+async def cmd_levels(message: Message, args: list[str], peer_id: int):
+    await EN_BOT.get_level_list(peer_id)
 
 
 @dp.message(CmdFilter(['buttons'], [0]))
