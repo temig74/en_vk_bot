@@ -126,47 +126,58 @@ async def cmd_help(message: Message):
 
 @dp.message(CmdFilter(['auth'], [0, 4, 5]))
 async def cmd_auth(message: Message, args: list[str], peer_id: int, from_):
-    if from_ not in ADMIN_USERNAMES:
-        await message.answer('Недостаточно прав для авторизации бота')
-        return
-    if not args:
-        await message.answer('Введите команду в формате /auth домен id_игры логин пароль [id_чата]')
-    if len(args) == 5 and args[4].lstrip('-').isdigit():
-        cur_chat_id = int(args[4])
-    elif len(args) == 4:
-        cur_chat_id = peer_id
-    else:
-        await message.answer('Неверный формат id чата')
-        return
-    if not args[1].isdigit():
-        await message.answer('Неверный формат id игры')
-        return
-    my_domain, my_game_id, my_login, my_password = args[:4]
-    await EN_BOT.auth(cur_chat_id, my_domain, my_game_id, my_login, my_password)
+    try:
+        if from_ not in ADMIN_USERNAMES:
+            await message.answer('Недостаточно прав для авторизации бота')
+            return
+        if not args:
+            await message.answer('Введите команду в формате /auth домен id_игры логин пароль [id_чата]')
+        if len(args) == 5 and args[4].lstrip('-').isdigit():
+            cur_chat_id = int(args[4])
+        elif len(args) == 4:
+            cur_chat_id = peer_id
+        else:
+            await message.answer('Неверный формат id чата')
+            return
+        if not args[1].isdigit():
+            await message.answer('Неверный формат id игры')
+            return
+        my_domain, my_game_id, my_login, my_password = args[:4]
+        await EN_BOT.auth(cur_chat_id, my_domain, my_game_id, my_login, my_password)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['scr', 'скр', 'screen', 'скрин', 'fs', 'фс'], [0]))
 async def cmd_screen(message: Message, command: str, peer_id: int):
-    full = command in ['fs', 'фс']
-    screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full)
-    await sender_function(peer_id, screen_bytes)
+    try:
+        full = command in ['fs', 'фс']
+        screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full)
+        await sender_function(peer_id, screen_bytes)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['game_monitor'], [0, 1]))
 async def cmd_game_monitor(message: Message, args: list[str], peer_id: int):
-    if args and args[0] == '0':
-        state = False
-    else:
-        state = True
-    await EN_BOT.game_monitor(peer_id, state)
-
+    try:
+        if args and args[0] == '0':
+            state = False
+        else:
+            state = True
+        await EN_BOT.game_monitor(peer_id, state)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 @dp.message(CmdFilter(['stop_auth'], [0]))
 async def cmd_stop_auth(message: Message, peer_id: int, from_: str):
-    if from_ not in ADMIN_USERNAMES:
-        await message.answer('Недостаточно прав для отключения авторизации бота')
-        return
-    await EN_BOT.stop_auth(peer_id)
+    try:
+        if from_ not in ADMIN_USERNAMES:
+            await message.answer('Недостаточно прав для отключения авторизации бота')
+            return
+        await EN_BOT.stop_auth(peer_id)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['get_id'], [0]))
@@ -176,59 +187,81 @@ async def cmd_get_id(message: Message, peer_id: int, from_: str):
 
 @dp.message(CmdFilter(['h', 'hints'], [0]))
 async def cmd_hint(message: Message, peer_id: int):
-    hint_str = await EN_BOT.get_hints(peer_id)
-    await sender_function(peer_id, hint_str[0]+'\n' + hint_str[1])
+    try:
+        hint_str = await EN_BOT.get_hints(peer_id)
+        await sender_function(peer_id, hint_str[0]+'\n' + hint_str[1])
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['t', 'task'], [0]))
 async def cmd_task(message: Message, peer_id: int):
-    time_str = await EN_BOT.get_time(peer_id)
-    await sender_function(peer_id, time_str)
-    task_str = await EN_BOT.get_task(peer_id)
-    await sender_function(peer_id, task_str[1])
-    hint_str = await EN_BOT.get_hints(peer_id)
-    await sender_function(peer_id, hint_str[0]+'\n'+hint_str[1])
-    await EN_BOT.get_kml(peer_id)
+    try:
+        time_str = await EN_BOT.get_time(peer_id)
+        await sender_function(peer_id, time_str)
+        task_str = await EN_BOT.get_task(peer_id)
+        await sender_function(peer_id, task_str[1])
+        hint_str = await EN_BOT.get_hints(peer_id)
+        await sender_function(peer_id, hint_str[0]+'\n'+hint_str[1])
+        await EN_BOT.get_kml(peer_id)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['open_browser'], [0]))
 async def cmd_open_browser(message: Message, peer_id: int, from_: str):
-    if from_ not in ADMIN_USERNAMES:
-        await message.answer('Недостаточно прав для запуска браузера')
-        return
-    await EN_BOT.open_browser(peer_id)
+    try:
+        if from_ not in ADMIN_USERNAMES:
+            await message.answer('Недостаточно прав для запуска браузера')
+            return
+        await EN_BOT.open_browser(peer_id)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['time'], [0]))
 async def cmd_time(message: Message, peer_id: int):
-    time_str = await EN_BOT.get_time(peer_id)
-    await sender_function(peer_id, time_str)
-    hint_str = await EN_BOT.get_hints(peer_id)
-    await sender_function(peer_id, hint_str[1])
-
+    try:
+        time_str = await EN_BOT.get_time(peer_id)
+        await sender_function(peer_id, time_str)
+        hint_str = await EN_BOT.get_hints(peer_id)
+        await sender_function(peer_id, hint_str[1])
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 @dp.message(CmdFilter(['s', 'sectors', 'sl', 'b', 'bonuses', 'bl'], [0, 1]))
 async def cmd_sectors(message: Message, command: str, args: list[str], peer_id: int):
-    sector = True if command in ['s', 'sectors', 'sl'] else False
-    levelnum = args[0] if args else '0'
-    result_str = await EN_BOT.get_sectors_and_bonuses(peer_id, sector, levelnum, True if command in ['sl', 'bl'] else False)
-    await sender_function(peer_id, result_str)
-
+    try:
+        sector = True if command in ['s', 'sectors', 'sl'] else False
+        levelnum = args[0] if args else '0'
+        result_str = await EN_BOT.get_sectors_and_bonuses(peer_id, sector, levelnum, True if command in ['sl', 'bl'] else False)
+        await sender_function(peer_id, result_str)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 @dp.message(CmdFilter(['load_old_json'], [0]))
 async def cmd_load_old_json(message: Message, peer_id: int):
-    await EN_BOT.load_old_json(peer_id)
+    try:
+        await EN_BOT.load_old_json(peer_id)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['accept_codes', 'sector_monitor', 'bonus_monitor', 'send_screen', 'parser', 'send_code_in_block', 'route_builder', 'up_full_screen'], [0, 1]))
 async def switch_flag(message: Message, command: str, args: list[str], peer_id: int):
-    switch = False if (args and args[0] == '0') else True
-    await EN_BOT.switch_flag(peer_id, command, switch)
+    try:
+        switch = False if (args and args[0] == '0') else True
+        await EN_BOT.switch_flag(peer_id, command, switch)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['set_players'], None))
 async def cmd_set_players(message: Message, args: list[str], peer_id: int):
-    await EN_BOT.set_players(peer_id, args)
+    try:
+        await EN_BOT.set_players(peer_id, args)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['set_doc'], [0, 1]))
@@ -238,44 +271,57 @@ async def cmd_set_doc(message: Message, args: list[str], peer_id: int):
 
 @dp.message(CmdFilter(['set_coords'], [2]))
 async def cmd_set_coords(message: Message, peer_id: int):
-    coords = message.text.replace(',', ' ').split()[1:3]
-    await EN_BOT.set_coords(peer_id, coords)
+    try:
+        coords = message.text.replace(',', ' ').split()[1:3]
+        await EN_BOT.set_coords(peer_id, coords)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['set_prefix'], [0, 1]))
 async def cmd_set_prefix(message: Message, args: list[str], peer_id: int):
-    if args:
-        prefix = args[0]
-    else:
-        prefix = ''
-    await EN_BOT.set_prefix(peer_id, prefix)
-
+    try:
+        if args:
+            prefix = args[0]
+        else:
+            prefix = ''
+        await EN_BOT.set_prefix(peer_id, prefix)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 @dp.message(CmdFilter(['game_info'], [0]))
 async def cmd_game_info(message: Message, peer_id: int):
-    game_str = await EN_BOT.get_game_info(peer_id)
-    await sender_function(peer_id, game_str)
+    try:
+        game_str = await EN_BOT.get_game_info(peer_id)
+        await sender_function(peer_id, game_str)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['*', 'geo'], [0, 2]))
 async def cmd_geo(message: Message, args: list[str], peer_id: int):
-    if args:
-        await sender_function(peer_id, [args])
-    else:
-        await message.answer('Введите широту и долготу после команды через пробел')
+    try:
+        if args:
+            await sender_function(peer_id, [args])
+        else:
+            await message.answer('Введите широту и долготу после команды через пробел')
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['w', 'wf'], None))
 async def cmd_w(message: Message, command: str, args: list[str], peer_id: int):
-    if args:
-        article = ' '.join(args)
-    else:
-        await message.answer('Введите название статьи после команды')
-        return
-    full = (command == 'wf')
-    screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full, article)
-    await sender_function(peer_id, screen_bytes)
-
+    try:
+        if args:
+            article = ' '.join(args)
+        else:
+            await message.answer('Введите название статьи после команды')
+            return
+        full = (command == 'wf')
+        screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full, article)
+        await sender_function(peer_id, screen_bytes)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 @dp.message(CmdFilter(['set_level'], [1]))
 async def cmd_set_level(message: Message, command: str, args: list[str], peer_id: int):
@@ -287,14 +333,20 @@ async def cmd_set_level(message: Message, command: str, args: list[str], peer_id
 
 @dp.message(CmdFilter(['levels'], [0]))
 async def cmd_levels(message: Message, args: list[str], peer_id: int):
-    await EN_BOT.get_level_list(peer_id)
+    try:
+        await EN_BOT.get_level_list(peer_id)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 @dp.message(CmdFilter(['penalty'], [0, 1]))
 async def cmd_penalty(message: Message, args: list[str], peer_id: int):
-    if not args:
-        await message.answer('Не указан id штрафной подсказки')
-    await EN_BOT.take_penalty_hint(peer_id, args[0])
+    try:
+        if not args:
+            await message.answer('Не указан id штрафной подсказки')
+        await EN_BOT.take_penalty_hint(peer_id, args[0])
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 @dp.message(CmdFilter(['buttons'], [0]))
 async def cmd_buttons(message: Message):
@@ -323,25 +375,74 @@ async def cmd_del_kb(message: Message):
 
 @dp.message(text=['<answer>'])
 async def cmd_send_answer(message: Message, answer: str):
-    # со ссылками сообщения отправляются дважды, нужно их фильтровать
-    if message.attachments:
-        return
+    try:
+        # со ссылками сообщения отправляются дважды, нужно их фильтровать
+        if message.attachments:
+            return
+        if answer.lower().split()[0] in ['/auth',
+                                         '/stop_auth',
+                                         '/get_id',
+                                         '/game_monitor',
+                                         '/s',
+                                         '/sectors',
+                                         '/sl',
+                                         '/bl',
+                                         '/b',
+                                         '/bonuses',
+                                         '/h',
+                                         '/hints',
+                                         '/t',
+                                         '/task',
+                                         '/scr',
+                                         '/скр',
+                                         '/скрин',
+                                         '/screen',
+                                         '/fs',
+                                         '/фс',
+                                         '/accept_codes',
+                                         '/sector_monitor',
+                                         '/bonus_monitor',
+                                         '/parser',
+                                         '/send_screen',
+                                         '/send_code_in_block',
+                                         '/route_builder',
+                                         '/up_full_screen',
+                                         '/set_coords',
+                                         '/time',
+                                         '/load_old_json',
+                                         '/geo',
+                                         '/*',
+                                         '/set_players',
+                                         '/open_browser',
+                                         '/game_info',
+                                         '/set_doc',
+                                         '/buttons',
+                                         '/w',
+                                         '/wf',
+                                         '/set_level',
+                                         '/levels',
+                                         '/set_prefix',
+                                         '/penalty'
+                                         ]:
+            return
 
-    prefix = await EN_BOT.get_prefix(message.peer_id)
-    if answer.startswith(prefix):
-        answer = answer[len(prefix):]
-    else:
-        return
+        prefix = await EN_BOT.get_prefix(message.peer_id)
+        if answer.startswith(prefix):
+            answer = answer[len(prefix):]
+        else:
+            return
 
-    if answer[0] == '!':
-        answer = answer[1:]
-        send_to_sector = True
-    else:
-        send_to_sector = False
-    users = await VK_BOT.api.users.get(user_ids=message.from_id)
-    user = users[0]
-    answer_reply = await EN_BOT.send_answer(message.peer_id, f'{user.first_name} {user.last_name}', answer, send_to_sector)
-    await sender_function(message.peer_id, answer_reply)
+        if answer[0] == '!':
+            answer = answer[1:]
+            send_to_sector = True
+        else:
+            send_to_sector = False
+        users = await VK_BOT.api.users.get(user_ids=message.from_id)
+        user = users[0]
+        answer_reply = await EN_BOT.send_answer(message.peer_id, f'{user.first_name} {user.last_name}', answer, send_to_sector)
+        await sender_function(message.peer_id, answer_reply)
+    except Exception as e:
+        await message.answer(f'Ошибка {e}')
 
 
 async def startup_task():
