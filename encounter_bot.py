@@ -503,7 +503,27 @@ class EncounterBot:
                 future_hints += f'Подсказка {elem["Number"]}: Будет через {datetime.timedelta(seconds=elem["RemainSeconds"])}\n{"_" * 30}\n\n'
         if current_hints == '' and future_hints == '':
             current_hints = 'Нет подсказок'
+
+        for elem in game_json['Level']['PenaltyHelps']:
+            if elem['RemainSeconds'] == 0:
+                current_hints += f'Штрафная подсказка {elem["Number"]} id: {elem["HelpId"]} {'не ' if elem["PenaltyHelpState"] == 0 else ''} открыта: Штраф {elem["Penalty"]} секунд\n{elem["HelpText"] if elem["HelpText"] else ''}\n{"_" * 30}\n\n'
+            else:
+                future_hints += f'Штрафная подсказка {elem["Number"]}: Будет через {datetime.timedelta(seconds=elem["RemainSeconds"])}\n{"_" * 30}\n\n'
+
         return parse_html(current_hints, chat_data.get('parser', False)), parse_html(future_hints, chat_data.get('parser', False))
+
+    async def take_penalty_hint(self, peer_id: str | int, hint_id: str | int):
+        chat_data = self.cur_chats.get(peer_id)
+        if not chat_data:
+            await self.message_func(peer_id, 'Чат не авторизован')
+            return
+        try:
+            async with chat_data["session"].get(f'https://{chat_data["cur_domain"]}/GameEngines/Encounter/Play/{chat_data["cur_json"]["GameId"]}?json=1&pid={hint_id}&pact=1') as response:
+                response.raise_for_status()
+                if str(hint_id) in await response.text():
+                    await self.message_func(peer_id, 'Штрафная подсказка взята')
+        except:
+            await self.message_func(peer_id, 'Ошибка при взятии штрафной подсказки')
 
     async def get_task(self, peer_id: str | int) -> tuple[str, str] | None:
         if await self.check_engine(peer_id) != 'UP':
@@ -907,7 +927,18 @@ class EncounterBot:
                     for i, elem in enumerate(chat_data["cur_json"]['Level']['Helps']):
                         if elem['HelpText'] != old_json['Level']['Helps'][i]['HelpText']:
                             await self.message_func(peer_id, f'Подсказка {i + 1}: {parse_html(elem["HelpText"], chat_data.get('parser', False))}')
-                            await self.send_kml_info(peer_id, elem["HelpText"], game_json['Level']['Number'])
+                            if elem["HelpText"]:
+                                await self.send_kml_info(peer_id, elem["HelpText"], game_json['Level']['Number'])
+
+                # Проверка, что пришла штрафная подсказка
+                if len(chat_data["cur_json"]['Level']['PenaltyHelps']) != len(old_json['Level']['PenaltyHelps']):
+                    await self.message_func(peer_id, 'Была добавлена штрафная подсказка')
+                else:
+                    for i, elem in enumerate(chat_data["cur_json"]['Level']['PenaltyHelps']):
+                        if (elem['HelpText'] != old_json['Level']['PenaltyHelps'][i]['HelpText']) or (elem['RemainSeconds'] == 0 and elem['RemainSeconds'] != old_json['Level']['PenaltyHelps'][i]['RemainSeconds']):
+                            await self.message_func(peer_id, f'Штрафная подсказка {elem["Number"]} id {elem["HelpId"]}: {'не ' if elem["PenaltyHelpState"] == 0 else ''} открыта: Штраф {elem["Penalty"]} секунд\n{parse_html(elem["HelpText"], chat_data.get('parser', False)) if elem["HelpText"] else ''}')
+                            if elem["HelpText"]:
+                                await self.send_kml_info(peer_id, elem["HelpText"], game_json['Level']['Number'])
 
                 # мониторинг закрытия секторов
                 if chat_data['sector_monitor']:

@@ -120,6 +120,7 @@ async def cmd_help(message: Message):
     /set_level номер_уровня - установить текущий номер уровня (актуально для штурма)
     /levels - список уровней
     /set_prefix prefix - установить префикс для вбития кодов
+    /penalty id_штрафной подсказки - взять штрафную подсказку
     ''')
 
 
@@ -144,7 +145,7 @@ async def cmd_auth(message: Message, args: list[str], peer_id: int, from_):
     await EN_BOT.auth(cur_chat_id, my_domain, my_game_id, my_login, my_password)
 
 
-@dp.message(CmdFilter(['scr', 'скр', 'fs', 'фс'], [0]))
+@dp.message(CmdFilter(['scr', 'скр', 'screen', 'скрин', 'fs', 'фс'], [0]))
 async def cmd_screen(message: Message, command: str, peer_id: int):
     full = command in ['fs', 'фс']
     screen_bytes = await EN_BOT.get_screen_as_bytes_async(peer_id, full)
@@ -288,6 +289,12 @@ async def cmd_set_level(message: Message, command: str, args: list[str], peer_id
 async def cmd_levels(message: Message, args: list[str], peer_id: int):
     await EN_BOT.get_level_list(peer_id)
 
+
+@dp.message(CmdFilter(['penalty'], [0, 1]))
+async def cmd_penalty(message: Message, args: list[str], peer_id: int):
+    if not args:
+        await message.answer('Не указан id штрафной подсказки')
+    await EN_BOT.take_penalty_hint(peer_id, args[0])
 
 @dp.message(CmdFilter(['buttons'], [0]))
 async def cmd_buttons(message: Message):
