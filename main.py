@@ -169,6 +169,7 @@ async def cmd_game_monitor(message: Message, args: list[str], peer_id: int):
     except Exception as e:
         await message.answer(f'Ошибка {e}')
 
+
 @dp.message(CmdFilter(['stop_auth'], [0]))
 async def cmd_stop_auth(message: Message, peer_id: int, from_: str):
     try:
@@ -229,6 +230,7 @@ async def cmd_time(message: Message, peer_id: int):
     except Exception as e:
         await message.answer(f'Ошибка {e}')
 
+
 @dp.message(CmdFilter(['s', 'sectors', 'sl', 'b', 'bonuses', 'bl'], [0, 1]))
 async def cmd_sectors(message: Message, command: str, args: list[str], peer_id: int):
     try:
@@ -238,6 +240,7 @@ async def cmd_sectors(message: Message, command: str, args: list[str], peer_id: 
         await sender_function(peer_id, result_str)
     except Exception as e:
         await message.answer(f'Ошибка {e}')
+
 
 @dp.message(CmdFilter(['load_old_json'], [0]))
 async def cmd_load_old_json(message: Message, peer_id: int):
@@ -289,6 +292,7 @@ async def cmd_set_prefix(message: Message, args: list[str], peer_id: int):
     except Exception as e:
         await message.answer(f'Ошибка {e}')
 
+
 @dp.message(CmdFilter(['game_info'], [0]))
 async def cmd_game_info(message: Message, peer_id: int):
     try:
@@ -302,7 +306,7 @@ async def cmd_game_info(message: Message, peer_id: int):
 async def cmd_geo(message: Message, args: list[str], peer_id: int):
     try:
         if args:
-            await sender_function(peer_id, [args])
+            await sender_function(peer_id, args)
         else:
             await message.answer('Введите широту и долготу после команды через пробел')
     except Exception as e:
@@ -322,6 +326,7 @@ async def cmd_w(message: Message, command: str, args: list[str], peer_id: int):
         await sender_function(peer_id, screen_bytes)
     except Exception as e:
         await message.answer(f'Ошибка {e}')
+
 
 @dp.message(CmdFilter(['set_level'], [1]))
 async def cmd_set_level(message: Message, command: str, args: list[str], peer_id: int):
@@ -347,6 +352,7 @@ async def cmd_penalty(message: Message, args: list[str], peer_id: int):
         await EN_BOT.take_penalty_hint(peer_id, args[0])
     except Exception as e:
         await message.answer(f'Ошибка {e}')
+
 
 @dp.message(CmdFilter(['buttons'], [0]))
 async def cmd_buttons(message: Message):
